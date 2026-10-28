@@ -49,7 +49,7 @@ npm run check-images
 | `AUTO_MIGRATE` | `true` (creates/updates tables on start, since the free plan has no shell) |
 | `CLIENT_URL` | your frontend address from step 5 (add it after step 5, then redeploy) |
 
-4. When it is live, open `https://YOUR-BACKEND.onrender.com/api/health`. You should see `{"status":"ok","database":"up"}`.
+4. When it is live, open `https://stylehub-umf3.onrender.com/api/health`. You should see `{"status":"ok","database":"up"}`.
 
 ## 5. Frontend: Render "Static Site"
 1. In Render: **New > Static Site**, same repo, and set:
