@@ -177,3 +177,4 @@ M-Pesa STK push is planned for the next update: add `"mpesa"` to `PAYMENT_METHOD
 - **Backend**: Deploy to Railway, Render, or a VPS. Use a managed PostgreSQL (Render, Neon, Supabase) and set `DATABASE_URL`.
 - **Frontend**: Deploy to Vercel, Netlify, or any static host. Update `API_BASE` in `js/api.js`.
 - **HTTPS**: Use your host's SSL in production.
+"# StyleHub" 
