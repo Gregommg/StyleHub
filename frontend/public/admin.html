@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>StyleHub — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<link rel="icon" type="image/png" href="images/favicon.png" />
+<link rel="stylesheet" href="css/admin.css" />
+</head>
+<body class="auth-pending">
+
+<div class="admin-layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────── -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <a href="index.html" class="sidebar-logo-link" aria-label="StyleHub store"><img src="images/stylehub-logo-nav.png" alt="StyleHub" /></a>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-group-label">Overview</div>
+      <a href="#" class="sidebar-link active" data-page="dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <div class="nav-group-label">Catalog</div>
+      <a href="#" class="sidebar-link" data-page="products">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        Products
+      </a>
+      <a href="#" class="sidebar-link" data-page="add-product">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add product
+      </a>
+      <div class="nav-group-label">Sales</div>
+      <a href="#" class="sidebar-link" data-page="orders">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        Orders
+      </a>
+      <a href="#" class="sidebar-link" data-page="customers">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Customers
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="user-avatar" id="admin-avatar">A</div>
+        <div>
+          <div id="admin-name" style="font-size:13px;font-weight:500">Admin</div>
+          <div style="font-size:11px;color:#9B958E">Administrator</div>
+        </div>
+      </div>
+      <button onclick="adminLogout()" style="background:none;border:none;cursor:pointer;font-size:12px;color:#9B958E;margin-top:8px">Sign out</button>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ────────────────────────────────────── -->
+  <main class="admin-main">
+
+    <!-- Topbar -->
+    <div class="admin-topbar">
+      <div id="page-title" class="page-title">Dashboard</div>
+      <div class="topbar-actions">
+        <input type="text" placeholder="Search…" id="admin-search" oninput="handleAdminSearch(this.value)" class="admin-search-input" />
+        <a href="index.html" class="view-store-btn">View store ↗</a>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD PAGE ───────────────────────── -->
+    <div id="page-dashboard" class="admin-page active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#F9F0E4">💰</div>
+          <div>
+            <div class="stat-label">Revenue (all time)</div>
+            <div class="stat-value" id="stat-revenue">KES —</div>
+            <div class="stat-change positive">↑ 14% vs last month</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#EAF3DE">📦</div>
+          <div>
+            <div class="stat-label">Total orders</div>
+            <div class="stat-value" id="stat-orders">—</div>
+            <div class="stat-change positive">↑ 8%</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#EEEDFE">👗</div>
+          <div>
+            <div class="stat-label">Products</div>
+            <div class="stat-value" id="stat-products">—</div>
+            <div class="stat-change neutral">Active listings</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#E1F5EE">👥</div>
+          <div>
+            <div class="stat-label">Customers</div>
+            <div class="stat-value" id="stat-customers">—</div>
+            <div class="stat-change positive">↑ 22%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <h3>Top products</h3>
+            <a href="#" onclick="navigate('products')" class="see-all">See all →</a>
+          </div>
+          <table class="admin-table" id="top-products-table">
+            <thead><tr><th>Product</th><th>Category</th><th>Units</th><th>Revenue</th></tr></thead>
+            <tbody id="top-products-body">
+              <tr><td colspan="4" class="loading-row">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <h3>Recent orders</h3>
+            <a href="#" onclick="navigate('orders')" class="see-all">See all →</a>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody id="recent-orders-body">
+              <tr><td colspan="4" class="loading-row">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PRODUCTS PAGE ────────────────────────── -->
+    <div id="page-products" class="admin-page">
+      <div class="page-toolbar">
+        <div class="filter-tabs" id="cat-filter-tabs">
+          <button class="tab-btn active" onclick="filterAdminCat('All',this)">All</button>
+          <button class="tab-btn" onclick="filterAdminCat('Tops',this)">Tops</button>
+          <button class="tab-btn" onclick="filterAdminCat('Bottoms',this)">Bottoms</button>
+          <button class="tab-btn" onclick="filterAdminCat('Dresses',this)">Dresses</button>
+          <button class="tab-btn" onclick="filterAdminCat('Outerwear',this)">Outerwear</button>
+          <button class="tab-btn" onclick="filterAdminCat('Accessories',this)">Accessories</button>
+        </div>
+        <button class="action-btn" onclick="navigate('add-product')">+ Add product</button>
+      </div>
+      <table class="admin-table full-table">
+        <thead>
+          <tr>
+            <th>Product</th><th>Category</th><th>Price</th>
+            <th>Stock</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="products-table-body">
+          <tr><td colspan="6" class="loading-row">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── ADD PRODUCT PAGE ─────────────────────── -->
+    <div id="page-add-product" class="admin-page">
+      <div class="form-card">
+        <h3 class="form-section-title" id="product-form-title">Product details</h3>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Product name *</label>
+            <input type="text" id="new-name" placeholder="e.g. Linen Blazer" />
+          </div>
+          <div class="form-group full">
+            <label>Description</label>
+            <textarea id="new-desc" rows="3" placeholder="Describe the product…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Category *</label>
+            <select id="new-cat">
+              <option>Tops</option><option>Bottoms</option>
+              <option>Dresses</option><option>Outerwear</option><option>Accessories</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Price (KES) *</label>
+            <input type="number" id="new-price" placeholder="0" min="1" step="1" />
+          </div>
+          <div class="form-group">
+            <label>Stock *</label>
+            <input type="number" id="new-stock" placeholder="0" min="0" />
+          </div>
+          <div class="form-group full">
+            <label>Available sizes <span style="color:#9B958E;font-weight:400">(comma-separated)</span></label>
+            <input type="text" id="new-sizes" placeholder="XS, S, M, L, XL" />
+          </div>
+          <div class="form-group full">
+            <label>Tags <span style="color:#9B958E;font-weight:400">(comma-separated)</span></label>
+            <input type="text" id="new-tags" placeholder="summer, casual, bestseller" />
+          </div>
+          <div class="form-group">
+            <label>Featured product</label>
+            <label class="toggle-label">
+              <input type="checkbox" id="new-featured" />
+              <span class="toggle-track"></span>
+              <span style="margin-left:8px;font-size:13px">Show on homepage</span>
+            </label>
+          </div>
+        </div>
+
+        <h3 class="form-section-title" style="margin-top:24px">Product images</h3>
+        <div class="image-upload-area" id="upload-area" onclick="document.getElementById('image-input').click()">
+          <input type="file" id="image-input" multiple accept="image/*" onchange="handleImagePreview(this)" style="display:none" />
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9B958E" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
+          <div style="margin-top:10px;font-size:14px;color:#9B958E">Click to upload images</div>
+          <div style="font-size:12px;color:#B4B0AA;margin-top:4px">Add at least one image · JPG, PNG or WebP · up to 5MB each · max 5</div>
+        </div>
+        <div id="image-previews" class="image-previews"></div>
+
+        <div style="display:flex;gap:12px;margin-top:24px;align-items:center">
+          <button id="submit-product-btn" class="submit-btn" onclick="submitProduct()">Add product</button>
+          <button class="cancel-btn" onclick="resetProductForm(); navigate('products')">Cancel</button>
+          <div id="add-product-msg" class="form-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ORDERS PAGE ──────────────────────────── -->
+    <div id="page-orders" class="admin-page">
+      <div class="page-toolbar">
+        <div class="filter-tabs">
+          <button class="tab-btn active" onclick="filterOrders('all',this)">All</button>
+          <button class="tab-btn" onclick="filterOrders('pending',this)">Pending</button>
+          <button class="tab-btn" onclick="filterOrders('processing',this)">Processing</button>
+          <button class="tab-btn" onclick="filterOrders('shipped',this)">Shipped</button>
+          <button class="tab-btn" onclick="filterOrders('delivered',this)">Delivered</button>
+        </div>
+      </div>
+      <table class="admin-table full-table">
+        <thead>
+          <tr>
+            <th>Order</th><th>Customer</th><th>Items</th>
+            <th>Total</th><th>Payment</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="orders-table-body">
+          <tr><td colspan="7" class="loading-row">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── CUSTOMERS PAGE ───────────────────────── -->
+    <div id="page-customers" class="admin-page">
+      <table class="admin-table full-table">
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr>
+        </thead>
+        <tbody id="customers-table-body">
+          <tr><td colspan="4" class="loading-row">Customers are loaded from the database when connected.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── ORDER DETAIL MODAL ──────────────────────── -->
+<div id="order-modal-overlay" class="modal-overlay hidden" onclick="closeOrderModal()"></div>
+<div id="order-modal" class="admin-modal hidden">
+  <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
+  <div id="order-modal-content"></div>
+</div>
+
+<!-- ── TOAST ───────────────────────────────────── -->
+<div id="admin-toast" class="admin-toast hidden"></div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
