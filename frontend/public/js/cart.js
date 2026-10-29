@@ -79,7 +79,7 @@ function renderCartDrawer() {
   container.innerHTML = cart.map(item => `
     <div class="cart-item">
       <div class="cart-item-thumb">
-        ${item.image ? `<img src="${productImageUrl(item.image)}" alt="${item.name}" />` : `<img class="placeholder-img" src="${categoryImage(item.category)}" alt="${item.name}" />`}
+        ${item.image ? `<img src="${productImageUrl(item.image, 160)}" loading="lazy" decoding="async" alt="${item.name}" />` : `<img class="placeholder-img" src="${categoryImage(item.category)}" alt="${item.name}" />`}
       </div>
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>

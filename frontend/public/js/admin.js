@@ -104,7 +104,7 @@ function renderTopProducts(products) {
   if (!products.length) { tbody.innerHTML = `<tr><td colspan="4" class="loading-row">No data</td></tr>`; return; }
   tbody.innerHTML = products.map(p => `
     <tr>
-      <td><span class="prod-cell"><img class="prod-thumb" src="${p.images && p.images[0] ? productImageUrl(p.images[0]) : categoryImage(p.category)}" alt="" />${p.name}</span></td>
+      <td><span class="prod-cell"><img class="prod-thumb" src="${p.images && p.images[0] ? productImageUrl(p.images[0], 120) : categoryImage(p.category)}" alt="" />${p.name}</span></td>
       <td>${p.category}</td>
       <td>${p.soldCount || 0}</td>
       <td>${formatKES((p.soldCount || 0) * p.price)}</td>
@@ -146,7 +146,7 @@ function renderAdminProducts() {
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <img class="prod-thumb" src="${p.images?.[0] ? productImageUrl(p.images[0]) : categoryImage(p.category)}" alt="" />
+          <img class="prod-thumb" src="${p.images?.[0] ? productImageUrl(p.images[0], 120) : categoryImage(p.category)}" alt="" />
           <div>
             <div style="font-weight:500">${p.name}</div>
             <div style="font-size:11px;color:#7C7469">${p.sizes?.join(", ") || "One size"}</div>
@@ -194,7 +194,7 @@ function editProduct(id) {
   document.getElementById("product-form-title").textContent = "Edit product";
   document.getElementById("submit-product-btn").textContent = "Save changes";
   document.getElementById("image-previews").innerHTML = (p.images || []).map(image =>
-    `<img class="preview-thumb" src="${productImageUrl(image)}" alt="Current product image" />`
+    `<img class="preview-thumb" src="${productImageUrl(image, 300)}" alt="Current product image" />`
   ).join("");
 }
 
@@ -230,7 +230,7 @@ function handleImagePreview(input) {
   const container = document.getElementById("image-previews");
   const existingImages = product?.images || [];
   container.innerHTML = [...existingImages.map(image =>
-    `<img class="preview-thumb" src="${productImageUrl(image)}" alt="Current product image" />`
+    `<img class="preview-thumb" src="${productImageUrl(image, 300)}" alt="Current product image" />`
   ), ...newProductImages.map(f =>
     `<img class="preview-thumb" src="${URL.createObjectURL(f)}" alt="preview" />`
   )].join("");

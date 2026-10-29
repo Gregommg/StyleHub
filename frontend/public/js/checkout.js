@@ -40,7 +40,7 @@ function renderCheckoutSummary() {
   itemsEl.innerHTML = cart.map(item => `
     <div class="checkout-item">
       <div class="checkout-item-thumb">
-        ${item.image ? `<img src="${productImageUrl(item.image)}" alt="${item.name}" />` : `<img class="placeholder-img" src="${categoryImage(item.category)}" alt="${item.name}" />`}
+        ${item.image ? `<img src="${productImageUrl(item.image, 160)}" loading="lazy" decoding="async" alt="${item.name}" />` : `<img class="placeholder-img" src="${categoryImage(item.category)}" alt="${item.name}" />`}
       </div>
       <div class="checkout-item-name">${item.name} × ${item.qty}${item.size ? ` (${item.size})` : ""}</div>
       <div class="checkout-item-price">${formatKES(item.price * item.qty)}</div>

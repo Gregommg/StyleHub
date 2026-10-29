@@ -113,7 +113,7 @@ function openProduct(id) {
       <div class="pm-image-wrap">
         <div class="pm-image" id="pm-image">
         ${selectedProductImages[0]
-          ? `<img src="${productImageUrl(selectedProductImages[0])}" alt="${p.name}" />`
+          ? `<img src="${productImageUrl(selectedProductImages[0], 900)}" alt="${p.name}" />`
           : productPicture(p)}
         </div>
         ${selectedProductImages.length > 1 ? `
@@ -160,7 +160,7 @@ function showProductImage(index) {
   if (!selectedProductImages[index]) return;
   selectedProductImage = index;
   document.getElementById("pm-image").innerHTML =
-    `<img src="${productImageUrl(selectedProductImages[index])}" alt="Product image ${index + 1}" />`;
+    `<img src="${productImageUrl(selectedProductImages[index], 900)}" alt="Product image ${index + 1}" />`;
   document.querySelectorAll(".gallery-dot").forEach((dot, i) =>
     dot.classList.toggle("active", i === index)
   );

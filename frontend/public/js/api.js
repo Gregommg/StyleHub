@@ -26,11 +26,11 @@ function categoryImage(category) {
   return CATEGORY_IMAGES[category] || CATEGORY_IMAGES.Tops;
 }
 // <img> tag for a product: its uploaded photo, or the category picture when it has none.
-function productPicture(p, extraClass = "") {
+function productPicture(p, extraClass = "", width = 600) {
   const photo = p.images && p.images[0];
   const cls = photo ? extraClass : `${extraClass} placeholder-img`.trim();
-  const src = photo ? productImageUrl(photo) : categoryImage(p.category);
-  return `<img class="${cls}" src="${src}" alt="${String(p.name || p.category || "").replace(/"/g, "&quot;")}" />`;
+  const src = photo ? productImageUrl(photo, width) : categoryImage(p.category);
+  return `<img class="${cls}" src="${src}" alt="${String(p.name || p.category || "").replace(/"/g, "&quot;")}" loading="lazy" decoding="async" />`;
 }
 function applyCategoryImages() {
   document.querySelectorAll("img[data-category-img]").forEach(img => {
@@ -38,9 +38,16 @@ function applyCategoryImages() {
   });
 }
 
-function productImageUrl(image) {
-  if (!image || !image.startsWith("/")) return image || "";
-  return API_BASE.replace(/\/api$/, "") + image;
+// width (optional): for Cloudinary photos, ask Cloudinary for a smaller, compressed copy that fits that width
+// (f_auto = best format for the browser, q_auto = smart compression). Phone photos are several MB; this makes
+// them load in a fraction of the time. Other images are returned unchanged.
+function productImageUrl(image, width) {
+  if (!image) return "";
+  if (image.startsWith("/")) return API_BASE.replace(/\/api$/, "") + image;
+  if (width && /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(image) && !/\/upload\/[a-z]{1,3}_[^/]*\//.test(image)) {
+    return image.replace("/image/upload/", `/image/upload/f_auto,q_auto,c_limit,w_${width}/`);
+  }
+  return image;
 }
 
 async function apiFetch(path, options = {}) {
