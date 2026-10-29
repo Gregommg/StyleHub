@@ -3,9 +3,14 @@ let adminProducts = [];
 let adminOrders   = [];
 let adminCatFilter   = "All";
 let adminOrderFilter = "all";
-let adminSearchVal   = "";
+let adminCustomers   = [];
 let newProductImages = [];
 let editingProductId = null;
+
+// Escape text before putting it into HTML (customer names, emails and addresses are typed by customers)
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
 
 // ── Demo data (fallback when API is offline) ──────
 const DEMO_ORDERS = [
@@ -37,6 +42,10 @@ async function requireAdmin() {
 document.addEventListener("DOMContentLoaded", async () => {
   if (!(await requireAdmin())) { leaveAdmin(); return; }
   document.body.classList.remove("auth-pending");
+  // Shorter search hint on phones so it isn't cut off
+  const phoneQuery = window.matchMedia("(max-width: 600px)");
+  const setSearchHint = () => { document.getElementById("admin-search").placeholder = phoneQuery.matches ? "Search anything…" : "Search products, orders, customers"; };
+  setSearchHint(); phoneQuery.addEventListener("change", setSearchHint);
   // Sidebar navigation
   document.querySelectorAll(".sidebar-link").forEach(link => {
     link.addEventListener("click", e => {
@@ -58,12 +67,28 @@ function navigate(page) {
 
   const titles = { dashboard:"Dashboard", products:"Products", "add-product":"Add product", orders:"Orders", customers:"Customers" };
   document.getElementById("page-title").textContent = titles[page] || page;
+  document.getElementById("nav-toggle-label").textContent = titles[page] || page;
+  toggleAdminMenu(false);
 
   if (page === "add-product" && !editingProductId) resetProductForm();
-  if (page === "products")   loadAdminProducts();
-  if (page === "orders")     loadAdminOrders();
-  if (page === "dashboard")  loadDashboard();
+  if (page === "products")   return loadAdminProducts();
+  if (page === "orders")     return loadAdminOrders();
+  if (page === "customers")  return loadAdminCustomers();
+  if (page === "dashboard")  return loadDashboard();
+  return Promise.resolve();
 }
+
+// ── Menu (drop-down on phones / small screens) ────
+function toggleAdminMenu(force) {
+  const nav = document.getElementById("sidebar-nav");
+  const btn = document.getElementById("nav-toggle");
+  const open = typeof force === "boolean" ? force : !nav.classList.contains("open");
+  nav.classList.toggle("open", open);
+  btn.classList.toggle("open", open);
+  btn.setAttribute("aria-expanded", String(open));
+}
+document.addEventListener("click", e => { if (!e.target.closest(".admin-sidebar")) toggleAdminMenu(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") toggleAdminMenu(false); });
 
 // ── Dashboard ─────────────────────────────────────
 async function loadDashboard() {
@@ -89,6 +114,14 @@ async function loadDashboard() {
     document.getElementById("stat-orders").textContent  = "—";
   }
 
+  // Customer count
+  try {
+    const data = await apiFetch("/users?limit=1");
+    document.getElementById("stat-customers").textContent = data.total;
+  } catch {
+    document.getElementById("stat-customers").textContent = "—";
+  }
+
   // Load recent orders
   try {
     const data = await apiFetch("/orders?limit=5");
@@ -104,8 +137,8 @@ function renderTopProducts(products) {
   if (!products.length) { tbody.innerHTML = `<tr><td colspan="4" class="loading-row">No data</td></tr>`; return; }
   tbody.innerHTML = products.map(p => `
     <tr>
-      <td><span class="prod-cell"><img class="prod-thumb" src="${p.images && p.images[0] ? productImageUrl(p.images[0], 120) : categoryImage(p.category)}" alt="" />${p.name}</span></td>
-      <td>${p.category}</td>
+      <td><span class="prod-cell"><img class="prod-thumb" src="${p.images && p.images[0] ? productImageUrl(p.images[0], 120) : categoryImage(p.category)}" alt="" />${esc(p.name)}</span></td>
+      <td>${esc(p.category)}</td>
       <td>${p.soldCount || 0}</td>
       <td>${formatKES((p.soldCount || 0) * p.price)}</td>
     </tr>
@@ -118,7 +151,7 @@ function renderRecentOrders(orders) {
   tbody.innerHTML = orders.map(o => `
     <tr>
       <td><code style="font-size:12px">#${o._id.slice(-6).toUpperCase()}</code></td>
-      <td>${o.user?.name || "Guest"}</td>
+      <td>${esc(o.user?.name || "Guest")}</td>
       <td>${formatKES(o.total)}</td>
       <td><span class="status-badge status-${o.status}">${o.status}</span></td>
     </tr>
@@ -139,21 +172,20 @@ async function loadAdminProducts() {
 function renderAdminProducts() {
   const tbody = document.getElementById("products-table-body");
   let list = adminCatFilter === "All" ? adminProducts : adminProducts.filter(p => p.category === adminCatFilter);
-  if (adminSearchVal) list = list.filter(p => p.name.toLowerCase().includes(adminSearchVal));
 
   if (!list.length) { tbody.innerHTML = `<tr><td colspan="6" class="loading-row">No products found</td></tr>`; return; }
   tbody.innerHTML = list.map(p => `
-    <tr>
+    <tr data-id="${p._id}">
       <td>
         <div style="display:flex;align-items:center;gap:10px">
           <img class="prod-thumb" src="${p.images?.[0] ? productImageUrl(p.images[0], 120) : categoryImage(p.category)}" alt="" />
           <div>
-            <div style="font-weight:500">${p.name}</div>
-            <div style="font-size:11px;color:#7C7469">${p.sizes?.join(", ") || "One size"}</div>
+            <div style="font-weight:500">${esc(p.name)}</div>
+            <div style="font-size:11px;color:#7C7469">${esc(p.sizes?.join(", ") || "One size")}</div>
           </div>
         </div>
       </td>
-      <td>${p.category}</td>
+      <td>${esc(p.category)}</td>
       <td>${formatKES(p.price)}</td>
       <td>
         <span style="color:${p.stock < 5 ? "#C0392B" : "#2E7D52"}">${p.stock}</span>
@@ -163,7 +195,7 @@ function renderAdminProducts() {
       <td>
         <div style="display:flex;gap:6px">
           <button class="tbl-btn" onclick="editProduct('${p._id}')">Edit</button>
-          <button class="tbl-btn danger" onclick="deleteProduct('${p._id}','${p.name}')">Remove</button>
+          <button class="tbl-btn danger" onclick="deleteProduct('${p._id}')">Remove</button>
         </div>
       </td>
     </tr>
@@ -198,7 +230,8 @@ function editProduct(id) {
   ).join("");
 }
 
-async function deleteProduct(id, name) {
+async function deleteProduct(id) {
+  const name = adminProducts.find(p => p._id === id)?.name || "this product";
   if (!confirm(`Remove "${name}" from the store?`)) return;
   try {
     await apiFetch(`/products/${id}`, { method: "DELETE" });
@@ -329,17 +362,14 @@ async function loadAdminOrders() {
 function renderAdminOrders() {
   const tbody = document.getElementById("orders-table-body");
   let list = adminOrderFilter === "all" ? adminOrders : adminOrders.filter(o => o.status === adminOrderFilter);
-  if (adminSearchVal) list = list.filter(o =>
-    o._id.includes(adminSearchVal) || o.user?.name?.toLowerCase().includes(adminSearchVal)
-  );
 
   if (!list.length) { tbody.innerHTML = `<tr><td colspan="7" class="loading-row">No orders found</td></tr>`; return; }
   tbody.innerHTML = list.map(o => `
-    <tr>
+    <tr data-id="${o._id}">
       <td><code style="font-size:12px">#${o._id.slice(-6).toUpperCase()}</code></td>
       <td>
-        <div>${o.user?.name || "Guest"}</div>
-        <div style="font-size:11px;color:#7C7469">${o.user?.email || ""}</div>
+        <div>${esc(o.user?.name || "Guest")}</div>
+        <div style="font-size:11px;color:#7C7469">${esc(o.user?.email || "")}</div>
       </td>
       <td>${o.items?.length || 1} item${o.items?.length !== 1 ? "s" : ""}</td>
       <td>${formatKES(o.total)}</td>
@@ -385,15 +415,15 @@ function viewOrderDetail(id) {
     <h3 style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;margin-bottom:20px">
       Order #${o._id.slice(-6).toUpperCase()}
     </h3>
-    <div class="order-detail-row"><span class="order-detail-label">Customer</span><span>${o.user?.name || "Guest"}</span></div>
-    <div class="order-detail-row"><span class="order-detail-label">Email</span><span>${o.user?.email || "—"}</span></div>
+    <div class="order-detail-row"><span class="order-detail-label">Customer</span><span>${esc(o.user?.name || "Guest")}</span></div>
+    <div class="order-detail-row"><span class="order-detail-label">Email</span><span>${esc(o.user?.email || "—")}</span></div>
     <div class="order-detail-row"><span class="order-detail-label">Date</span><span>${new Date(o.createdAt).toLocaleDateString()}</span></div>
     <div class="order-detail-row"><span class="order-detail-label">Status</span><span class="status-badge status-${o.status}">${o.status}</span></div>
-    <div class="order-detail-row"><span class="order-detail-label">Payment</span><span>${o.paymentMethod} — <span class="status-badge ${o.paymentStatus==="paid"?"status-paid":"status-unpaid"}">${o.paymentStatus}</span></span></div>
+    <div class="order-detail-row"><span class="order-detail-label">Payment</span><span>${esc(o.paymentMethod)} — <span class="status-badge ${o.paymentStatus==="paid"?"status-paid":"status-unpaid"}">${o.paymentStatus}</span></span></div>
     <div style="margin:16px 0;font-weight:500;font-size:13px">Items</div>
     ${(o.items||[]).map(item=>`
       <div class="order-detail-row">
-        <span>${item.name}${item.size?" ("+item.size+")":""} × ${item.quantity}</span>
+        <span>${esc(item.name)}${item.size?" ("+esc(item.size)+")":""} × ${item.quantity}</span>
         <span>${formatKES(item.price * item.quantity)}</span>
       </div>
     `).join("")}
@@ -402,9 +432,9 @@ function viewOrderDetail(id) {
     ${o.shippingAddress ? `
       <div style="margin-top:12px;font-size:12px;color:#7C7469">
         <strong>${o.deliveryZone === "nairobi-pickup" ? "Pickup point" : "Delivery location"}:</strong>
-        ${o.pickupLocation || o.shippingAddress.street}, ${o.shippingAddress.city}, ${o.shippingAddress.country}
-        ${o.shippingAddress.county ? `<br />${o.shippingAddress.county} County · ${o.shippingAddress.town}` : ""}
-        <br /><strong>Phone:</strong> ${o.shippingAddress.phone || "—"} · ${o.shippingAddress.email || ""}
+        ${[o.pickupLocation || o.shippingAddress.street, o.shippingAddress.city, o.shippingAddress.country].filter(Boolean).map(esc).join(", ")}
+        ${o.shippingAddress.county ? `<br />${esc(o.shippingAddress.county)} County · ${esc(o.shippingAddress.town)}` : ""}
+        <br /><strong>Phone:</strong> ${esc(o.shippingAddress.phone || "—")} · ${esc(o.shippingAddress.email || "")}
       </div>
     ` : ""}
   `;
@@ -417,13 +447,150 @@ function closeOrderModal() {
   document.getElementById("order-modal-overlay").classList.add("hidden");
 }
 
-// ── Search ────────────────────────────────────────
-function handleAdminSearch(val) {
-  adminSearchVal = val.toLowerCase();
-  const activePage = document.querySelector(".admin-page.active")?.id;
-  if (activePage === "page-products") renderAdminProducts();
-  if (activePage === "page-orders")   renderAdminOrders();
+// ── Customers ─────────────────────────────────────
+async function loadAdminCustomers() {
+  const tbody = document.getElementById("customers-table-body");
+  try {
+    const data = await apiFetch("/users?limit=200");
+    adminCustomers = data.customers;
+    document.getElementById("stat-customers").textContent = data.total;
+  } catch (err) {
+    adminCustomers = [];
+    tbody.innerHTML = `<tr><td colspan="5" class="loading-row">Could not load customers. ${esc(err.message || "")}</td></tr>`;
+    return;
+  }
+  renderCustomers();
 }
+
+function renderCustomers() {
+  const tbody = document.getElementById("customers-table-body");
+  if (!adminCustomers.length) { tbody.innerHTML = `<tr><td colspan="5" class="loading-row">No customers yet</td></tr>`; return; }
+  tbody.innerHTML = adminCustomers.map(c => `
+    <tr data-id="${c._id}">
+      <td>
+        <div style="font-weight:500">${esc(c.name)}</div>
+        <div style="font-size:11px;color:#7C7469">${esc(c.email)}</div>
+      </td>
+      <td>${esc(c.phone) || "—"}</td>
+      <td>${c.ordersCount}</td>
+      <td>${formatKES(c.totalSpent)}</td>
+      <td>${new Date(c.createdAt).toLocaleDateString()}</td>
+    </tr>
+  `).join("");
+}
+
+// ── Search (products, orders, customers) ──────────
+let searchTimer = null;
+let searchSeq   = 0;
+let searchHits  = [];
+let searchActive = -1;
+
+function hideSearchResults() {
+  document.getElementById("admin-search-results").classList.add("hidden");
+  searchActive = -1;
+}
+
+function handleAdminSearch(val) {
+  const q = val.trim();
+  clearTimeout(searchTimer);
+  searchSeq++;                                   // ignore any search that is still loading
+  if (q.length < 2) { hideSearchResults(); return; }
+  searchTimer = setTimeout(() => runAdminSearch(q), 250);
+}
+
+async function runAdminSearch(q) {
+  const seq = searchSeq;
+  const box = document.getElementById("admin-search-results");
+  box.classList.remove("hidden");
+  box.innerHTML = `<div class="sr-empty">Searching…</div>`;
+  const enc = encodeURIComponent(q);
+  const [p, o, c] = await Promise.allSettled([
+    apiFetch(`/products?search=${enc}&limit=5`),
+    apiFetch(`/orders?q=${enc}&limit=5`),
+    apiFetch(`/users?q=${enc}&limit=5`),
+  ]);
+  if (seq !== searchSeq) return;                 // a newer search started
+  renderSearchResults({
+    products:  p.status === "fulfilled" ? p.value.products  : [],
+    orders:    o.status === "fulfilled" ? o.value.orders    : [],
+    customers: c.status === "fulfilled" ? c.value.customers : [],
+  }, q);
+}
+
+function renderSearchResults(r, q) {
+  const box = document.getElementById("admin-search-results");
+  searchHits = [
+    ...r.products.map(obj => ({ type: "product", id: obj._id, obj })),
+    ...r.orders.map(obj => ({ type: "order", id: obj._id, obj })),
+    ...r.customers.map(obj => ({ type: "customer", id: obj._id, obj })),
+  ];
+  searchActive = -1;
+  if (!searchHits.length) { box.innerHTML = `<div class="sr-empty">No results for “${esc(q)}”</div>`; return; }
+
+  let html = "", i = 0;
+  const group = (label, items, row) => {
+    if (!items.length) return;
+    html += `<div class="sr-group">${label}</div>`;
+    items.forEach(obj => { html += `<button type="button" class="sr-item" role="option" data-hit="${i}" onclick="openSearchHit(${i})">${row(obj)}</button>`; i++; });
+  };
+  group("Products", r.products, p => `
+    <img class="sr-thumb" src="${p.images && p.images[0] ? productImageUrl(p.images[0], 80) : categoryImage(p.category)}" alt="" />
+    <span class="sr-text"><b>${esc(p.name)}</b><small>${esc(p.category)} · ${formatKES(p.price)} · ${p.stock} in stock</small></span>`);
+  group("Orders", r.orders, o => `
+    <span class="sr-icon">#</span>
+    <span class="sr-text"><b>#${o._id.slice(-6).toUpperCase()} · ${esc(o.user?.name || "Guest")}</b><small>${formatKES(o.total)} · ${esc(o.status)}</small></span>`);
+  group("Customers", r.customers, c => `
+    <span class="sr-icon">${esc((c.name || "?").trim().charAt(0).toUpperCase())}</span>
+    <span class="sr-text"><b>${esc(c.name)}</b><small>${esc(c.email)}</small></span>`);
+  box.innerHTML = html;
+}
+
+function highlightRow(tbodyId, id) {
+  const tr = document.querySelector(`#${tbodyId} tr[data-id="${id}"]`);
+  if (!tr) return;
+  tr.scrollIntoView({ block: "center", behavior: "smooth" });
+  tr.classList.add("row-flash");
+  setTimeout(() => tr.classList.remove("row-flash"), 2600);
+}
+
+// Take the admin to the chosen item
+async function openSearchHit(index) {
+  const hit = searchHits[index];
+  if (!hit) return;
+  hideSearchResults();
+  const input = document.getElementById("admin-search");
+  input.value = ""; input.blur();
+  searchSeq++;
+
+  if (hit.type === "product") {
+    await navigate("products");
+    highlightRow("products-table-body", hit.id);
+  } else if (hit.type === "order") {
+    await navigate("orders");
+    if (!adminOrders.some(o => o._id === hit.id)) adminOrders.unshift(hit.obj);
+    highlightRow("orders-table-body", hit.id);
+    viewOrderDetail(hit.id);
+  } else {
+    await navigate("customers");
+    highlightRow("customers-table-body", hit.id);
+  }
+}
+
+function adminSearchKey(e) {
+  const items = [...document.querySelectorAll("#admin-search-results .sr-item")];
+  if (e.key === "Escape") { hideSearchResults(); e.target.blur(); return; }
+  if (!items.length) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    searchActive = (searchActive + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items.forEach((el, n) => el.classList.toggle("active", n === searchActive));
+    items[searchActive].scrollIntoView({ block: "nearest" });
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    openSearchHit(searchActive >= 0 ? searchActive : 0);
+  }
+}
+document.addEventListener("click", e => { if (!e.target.closest(".search-wrap")) hideSearchResults(); });
 
 // ── Toast ─────────────────────────────────────────
 function adminToast(msg, type = "") {

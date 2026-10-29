@@ -26,6 +26,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/products", require("./routes/products"));
 app.use("/api/orders", require("./routes/orders"));
+app.use("/api/users", require("./routes/users"));
 
 app.get("/api/health", async (req, res) => {
   try { await pool.query("SELECT 1"); res.json({ status: "ok", database: "up" }); }

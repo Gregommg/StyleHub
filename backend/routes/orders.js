@@ -101,15 +101,26 @@ router.get("/stats/summary", protect, adminOnly, async (req, res) => {
   }
 });
 
-// GET /api/orders (admin)
+// GET /api/orders (admin)  - optional ?status= and ?q= (order id, customer name/email/phone, product name)
 router.get("/", protect, adminOnly, async (req, res) => {
   try {
     const { status } = req.query;
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
-    const params = status ? [status] : [];
-    const where = status ? "WHERE o.status = $1" : "";
-    const total = Number((await pool.query(`SELECT count(*) FROM orders o ${where}`, params)).rows[0].count);
+    const params = [];
+    const conds = [];
+    if (status) { params.push(status); conds.push(`o.status = $${params.length}`); }
+    const q = String(req.query.q || "").trim().replace(/^#/, "");
+    if (q) {
+      params.push(`%${q.replace(/[\\%_]/g, "\\$&")}%`);
+      const i = params.length;
+      conds.push(`(o.id::text ILIKE $${i} OR u.name ILIKE $${i} OR u.email ILIKE $${i}
+        OR o.shipping_address->>'name' ILIKE $${i} OR o.shipping_address->>'phone' ILIKE $${i}
+        OR EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.id AND oi.name ILIKE $${i}))`);
+    }
+    const where = conds.length ? `WHERE ${conds.join(" AND ")}` : "";
+    const total = Number((await pool.query(
+      `SELECT count(*) FROM orders o LEFT JOIN users u ON u.id = o.user_id ${where}`, params)).rows[0].count);
     const { rows } = await pool.query(
       `SELECT o.*, u.name AS user_name, u.email AS user_email
        FROM orders o LEFT JOIN users u ON u.id = o.user_id ${where}
